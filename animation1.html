@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Ad Ranking — Animation v1</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --orange:#ff6b35;--red:#e8282a;--green:#27ae60;--gold:#f5a623;
+  --bg:#1a1a2e;--panel:#16213e;--card:#0f3460;--txt:#e8eaf0;
+  --sub:#8892a4;--border:#2a3a5c;
+}
+body{
+  background:var(--bg);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+  color:var(--txt);
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+.header{
+  width:100%;max-width:1100px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 32px 12px;
+}
+.header-title{
+  font-size:17px;font-weight:700;letter-spacing:-.3px;color:var(--txt);
+}
+.header-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+.scene-indicator{
+  display:flex;gap:8px;align-items:center;
+}
+.scene-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--border);transition:background .3s,transform .3s;
+  cursor:pointer;
+}
+.scene-dot.active{background:var(--orange);transform:scale(1.3);}
+.scene-dot.done{background:#3a5a3a;}
+
+/* ── STAGE ── */
+.stage{
+  width:100%;max-width:1100px;
+  padding:0 32px;
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;
+}
+
+/* ── SCENE WRAPPER ── */
+.scene{
+  display:none;
+  width:100%;
+  animation:fadeIn .5s ease;
+}
+.scene.active{display:flex;flex-direction:column;align-items:center;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SCENE TITLE ── */
+.scene-header{
+  width:100%;text-align:center;
+  margin-bottom:24px;
+}
+.scene-label{
+  font-size:11px;font-weight:700;letter-spacing:2px;
+  color:var(--orange);text-transform:uppercase;margin-bottom:6px;
+}
+.scene-title{
+  font-size:26px;font-weight:800;letter-spacing:-.5px;
+  background:linear-gradient(135deg,#e8eaf0,#a8b4cc);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.scene-desc{
+  font-size:13.5px;color:var(--sub);margin-top:8px;line-height:1.6;
+}
+
+/* ── TWO COLUMN LAYOUT ── */
+.two-col{
+  display:flex;gap:28px;width:100%;align-items:flex-start;
+}
+.col-phone{flex-shrink:0;}
+.col-right{flex:1;min-width:0;}
+
+/* ── PHONE SHELL ── */
+.phone-wrap{
+  width:260px;
+  filter:drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+}
+.phone-shell{
+  width:260px;height:560px;
+  background:#111;border-radius:40px;padding:10px;
+  box-shadow:0 0 0 1px #333,inset 0 1px 0 rgba(255,255,255,.08);
+  position:relative;
+}
+.phone-shell::before{
+  content:'';position:absolute;left:-3px;top:110px;
+  width:3px;height:24px;background:#2c2c2c;border-radius:2px 0 0 2px;
+  box-shadow:0 34px 0 #2c2c2c,0 64px 0 #2c2c2c;
+}
+.phone-shell::after{
+  content:'';position:absolute;right:-3px;top:130px;
+  width:3px;height:52px;background:#2c2c2c;border-radius:0 2px 2px 0;
+}
+.phone-screen{
+  width:100%;height:100%;
+  background:#fff;border-radius:32px;
+  overflow:hidden;display:flex;flex-direction:column;
+  position:relative;
+}
+.dyn-island{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:80px;height:24px;background:#000;border-radius:14px;z-index:100;
+}
+.p-statusbar{
+  height:40px;padding:10px 16px 0;
+  display:flex;align-items:center;justify-content:space-between;
+  background:#fff;flex-shrink:0;position:relative;z-index:10;
+}
+.p-time{font-size:10px;font-weight:700;color:#000;}
+.p-icons{display:flex;gap:4px;align-items:center;}
+
+.p-header{
+  background:#fff;padding:6px 12px 0;flex-shrink:0;
+  border-bottom:1px solid #f0f0f0;
+}
+.p-loc{
+  display:flex;align-items:center;gap:4px;
+  background:#fff8f5;border:1px solid #ffe0d0;border-radius:14px;
+  padding:3px 8px;width:fit-content;margin-bottom:7px;
+}
+.p-loc-txt{font-size:9px;font-weight:700;color:#1a1a1a;}
+.p-loc-pin{font-size:10px;}
+.p-search{
+  background:#f4f4f4;border-radius:8px;padding:6px 10px;
+  display:flex;align-items:center;gap:5px;margin-bottom:8px;
+}
+.p-search span{font-size:9px;color:#bbb;}
+.p-tabs{
+  display:flex;gap:10px;padding-bottom:6px;overflow:hidden;
+}
+.p-tab{font-size:9px;font-weight:500;color:#888;white-space:nowrap;}
+.p-tab.active{color:var(--orange);font-weight:700;border-bottom:1.5px solid var(--orange);}
+
+.p-sortbar{
+  display:flex;align-items:center;gap:5px;padding:5px 12px;
+  background:#fafafa;border-bottom:1px solid #f0f0f0;flex-shrink:0;
+}
+.p-sort-lbl{font-size:8px;color:#aaa;}
+.p-sort-chip{
+  font-size:8px;font-weight:600;padding:2.5px 7px;
+  border-radius:12px;border:1px solid #e8e8e8;color:#666;background:#fff;
+}
+.p-sort-chip.active{background:#fff3ee;border-color:var(--orange);color:var(--orange);}
+
+/* phone store list */
+.p-list{flex:1;overflow:hidden;background:#fff;}
+
+/* phone store card */
+.p-card{
+  display:flex;align-items:flex-start;
+  padding:9px 12px;border-bottom:1px solid #f5f5f5;
+  background:#fff;position:relative;
+  transition:all .5s cubic-bezier(.34,1.2,.64,1);
+}
+.p-card.ad-slot{
+  outline:1.5px dashed #e8282a;outline-offset:-1px;border-radius:3px;
+}
+.p-logo{
+  width:52px;height:52px;border-radius:10px;
+  flex-shrink:0;margin-right:9px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  position:relative;overflow:hidden;
+}
+.p-logo-letter{font-size:15px;font-weight:900;color:#fff;line-height:1;letter-spacing:-1px;}
+.p-logo-sub{font-size:5px;font-weight:600;color:rgba(255,255,255,.8);letter-spacing:.5px;text-transform:uppercase;}
+.p-ad-badge{
+  position:absolute;bottom:3px;right:3px;
+  background:#ff9500;color:#fff;font-size:6px;font-weight:800;
+  padding:1px 3.5px;border-radius:2.5px;letter-spacing:.3px;
+  opacity:0;transform:scale(.6);transition:all .2s ease;
+}
+.p-ad-badge.on{opacity:1;transform:scale(1);}
+
+.p-info{flex:1;min-width:0;padding-top:1px;}
+.p-name{font-size:10px;font-weight:700;color:#1a1a1a;margin-bottom:2px;letter-spacing:-.2px;}
+.p-rating{display:flex;align-items:center;gap:3px;margin-bottom:2px;}
+.p-rating span{font-size:8px;}
+.p-rating .rv{font-weight:700;color:#1a1a1a;}
+.p-rating .rc{color:#bbb;}
+.p-delivery{display:flex;align-items:center;gap:3px;margin-bottom:4px;}
+.p-delivery span{font-size:8px;color:#aaa;}
+.p-free{color:#27ae60!important;font-weight:700!important;}
+.p-tags{display:flex;flex-wrap:wrap;gap:3px;}
+.p-tag{font-size:7px;font-weight:600;padding:1.5px 5px;border-radius:3px;}
+.p-tag.promo{background:#fff3e0;color:#d4670a;}
+.p-tag.green{background:#e8f5ef;color:#1a8a45;}
+.p-tag.yellow{background:#fdf9e0;color:#9a7c00;}
+
+.p-rank{
+  position:absolute;top:9px;right:10px;
+  font-size:8px;font-weight:700;color:#ddd;
+}
+.p-rank.gold{color:#f5a623;}
+.p-rank.silver{color:#a0a0a0;}
+.p-rank.bronze{color:#c47a3a;}
+
+.p-bottomnav{
+  display:flex;background:#fff;border-top:1px solid #f0f0f0;
+  padding:5px 0 12px;flex-shrink:0;
+}
+.p-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.p-nav-ico{font-size:14px;}
+.p-nav-lbl{font-size:7px;font-weight:500;color:#ccc;}
+.p-nav-item.active .p-nav-lbl{color:var(--orange);}
+
+/* ── SCORE PANEL ── */
+.score-panel{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:20px;
+}
+.sp-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:16px;}
+
+/* Formula display */
+.formula-box{
+  background:#0a1628;border-radius:12px;padding:16px;
+  margin-bottom:16px;text-align:center;border:1px solid var(--border);
+}
+.formula-main{
+  font-size:15px;font-weight:700;letter-spacing:.5px;
+  font-family:"SF Mono","Fira Code",monospace;
+  color:#e8eaf0;line-height:1.8;
+}
+.formula-main .k1{color:#64b5f6;}
+.formula-main .k2{color:#ce93d8;}
+.formula-main .gmv{color:#a5d6a7;}
+.formula-main .ecpm{color:#ffcc80;}
+.formula-main .op{color:#7986cb;}
+
+/* Slider row */
+.slider-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:10px;
+}
+.slider-label{
+  font-size:11.5px;font-weight:600;width:28px;flex-shrink:0;
+}
+.slider-label.k1{color:#64b5f6;}
+.slider-label.k2{color:#ce93d8;}
+.slider-track{
+  flex:1;height:4px;background:var(--border);border-radius:2px;
+  position:relative;cursor:pointer;
+}
+.slider-fill{
+  height:100%;border-radius:2px;
+  transition:width .4s ease;
+}
+.slider-fill.k1{background:linear-gradient(90deg,#1565c0,#64b5f6);}
+.slider-fill.k2{background:linear-gradient(90deg,#6a1b9a,#ce93d8);}
+.slider-thumb{
+  position:absolute;top:50%;right:-6px;
+  width:12px;height:12px;border-radius:50%;
+  background:#fff;transform:translateY(-50%);
+  box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+.slider-val{
+  font-size:11px;font-weight:700;width:30px;text-align:right;flex-shrink:0;
+}
+
+/* Brand score bars */
+.score-bars{margin-top:16px;}
+.score-bar-row{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+}
+.sb-name{font-size:10px;font-weight:600;width:72px;flex-shrink:0;}
+.sb-track{flex:1;height:20px;background:#0a1628;border-radius:6px;overflow:hidden;position:relative;}
+.sb-fill{
+  height:100%;border-radius:6px;
+  display:flex;align-items:center;padding-left:8px;
+  font-size:9px;font-weight:700;color:#fff;
+  transition:width .6s cubic-bezier(.34,1.1,.64,1);
+  min-width:2px;
+}
+.sb-score{font-size:10px;font-weight:700;width:38px;text-align:right;flex-shrink:0;}
+
+/* ─ eCPM formula decompose ─ */
+.ecpm-decompose{
+  background:#0a1628;border-radius:10px;padding:14px;
+  margin-bottom:14px;border:1px solid var(--border);
+}
+.ecpm-title{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:10px;}
+.ecpm-row{
+  display:flex;align-items:center;gap:6px;
+  font-family:"SF Mono","Fira Code",monospace;
+  font-size:11px;flex-wrap:wrap;margin-bottom:4px;
+}
+.ecpm-tok{
+  padding:3px 8px;border-radius:5px;font-weight:700;
+  transition:all .4s ease;
+}
+.ecpm-tok.dim{opacity:.3;}
+.ecpm-tok.t-pCTR{background:#1a3a5c;color:#64b5f6;}
+.ecpm-tok.t-price{background:#2a1a3c;color:#ce93d8;}
+.ecpm-tok.t-pCVR{background:#1a3a2c;color:#a5d6a7;}
+.ecpm-tok.t-fee{background:#3a2a1a;color:#ffcc80;}
+.ecpm-tok.t-1000{background:#2a1a3c;color:#ff9500;}
+.ecpm-tok.t-op{background:none;color:#7986cb;}
+.ecpm-tok.t-eq{background:none;color:#e8eaf0;opacity:.6;}
+.ecpm-arrow{color:var(--orange);font-size:13px;}
+
+/* ── FLOATING RULES PANEL ── */
+.rules-stack{display:flex;flex-direction:column;gap:14px;}
+.rule-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:16px;
+  transition:all .4s ease;
+}
+.rule-card.highlight{
+  border-color:var(--orange);
+  background:#1e2d1e;
+  box-shadow:0 0 0 1px var(--orange), 0 4px 16px rgba(255,107,53,.15);
+}
+.rule-card.violated{
+  border-color:var(--red);
+  background:#2e1a1a;
+  box-shadow:0 0 0 1px var(--red), 0 4px 16px rgba(232,40,42,.15);
+}
+.rule-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;
+  font-size:10px;font-weight:800;
+  background:var(--border);color:var(--sub);
+  margin-right:8px;flex-shrink:0;
+  transition:all .3s;
+}
+.rule-card.highlight .rule-num{background:var(--orange);color:#fff;}
+.rule-card.violated .rule-num{background:var(--red);color:#fff;}
+.rule-header{display:flex;align-items:center;margin-bottom:6px;}
+.rule-name{font-size:12px;font-weight:700;color:var(--txt);}
+.rule-desc{font-size:11px;color:var(--sub);line-height:1.6;margin-left:28px;}
+
+/* dedup table */
+.dedup-table{
+  width:100%;border-collapse:collapse;margin-top:8px;
+  font-size:10.5px;
+}
+.dedup-table th{
+  background:#0a1628;color:var(--sub);font-weight:600;
+  padding:6px 10px;text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.dedup-table td{
+  padding:7px 10px;border-bottom:1px solid #1a2a3c;color:var(--txt);
+  vertical-align:middle;
+}
+.dedup-table tr.active-row td{background:#1a2a1a;}
+.dedup-table tr.ad-row td{background:#2a1a1a;}
+.badge{
+  display:inline-block;padding:2px 7px;border-radius:4px;
+  font-size:9px;font-weight:700;
+}
+.badge.natural{background:#1a3a2c;color:#a5d6a7;}
+.badge.ad{background:#3a2a1a;color:#ffcc80;}
+.badge.result{background:#1a2a3c;color:#80deea;}
+.badge.ad-result{background:#2a1a3a;color:#ce93d8;}
+
+/* ── PLAYER CONTROLS ── */
+.player-bar{
+  width:100%;max-width:1100px;
+  padding:16px 32px 24px;
+  display:flex;align-items:center;gap:16px;
+}
+.progress-track{
+  flex:1;height:4px;background:var(--border);border-radius:2px;
+  cursor:pointer;position:relative;overflow:visible;
+}
+.progress-fill{
+  height:100%;background:var(--orange);border-radius:2px;
+  width:0%;transition:width .3s linear;
+}
+.progress-thumb{
+  position:absolute;top:50%;right:-7px;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--orange);transform:translateY(-50%);
+  box-shadow:0 2px 6px rgba(255,107,53,.5);
+}
+.ctrl-btn{
+  width:36px;height:36px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;transition:all .15s;
+}
+.ctrl-btn.play{background:var(--orange);color:#fff;}
+.ctrl-btn.play:hover{background:#e85c25;}
+.ctrl-btn.nav{background:var(--panel);color:var(--sub);border:1px solid var(--border);}
+.ctrl-btn.nav:hover{border-color:var(--orange);color:var(--orange);}
+.scene-counter{font-size:12px;color:var(--sub);white-space:nowrap;}
+
+/* ── HIGHLIGHT / BLINK ── */
+@keyframes blink{
+  0%,100%{opacity:1} 50%{opacity:.3}
+}
+.blink{animation:blink 1s ease infinite;}
+
+@keyframes slideDown{
+  from{opacity:0;transform:translateY(-20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.slide-down{animation:slideDown .4s ease forwards;}
+
+@keyframes pop{
+  0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)}
+}
+.pop{animation:pop .3s ease;}
+
+@keyframes shake{
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)}
+}
+.shake{animation:shake .4s ease;}
+
+/* rank change arrow */
+.rank-arrow{
+  font-size:9px;margin-left:3px;
+  transition:all .3s;
+}
+.rank-arrow.up{color:#27ae60;}
+.rank-arrow.down{color:#e8282a;}
+
+/* callout bubble */
+.callout{
+  position:absolute;
+  background:#1e3a5f;border:1px solid #3a6ea8;
+  border-radius:8px;padding:5px 10px;
+  font-size:9px;color:#80deea;font-weight:600;
+  pointer-events:none;white-space:nowrap;
+  z-index:50;
+  animation:fadeIn .3s ease;
+}
+
+/* overlay caption */
+.caption-box{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:14px 18px;
+  margin-bottom:16px;
+  font-size:13px;color:var(--txt);line-height:1.7;
+  border-left:3px solid var(--orange);
+}
+.caption-box strong{color:var(--orange);}
+
+/* step indicator */
+.step-dots{display:flex;gap:6px;margin-bottom:10px;justify-content:flex-end;}
+.step-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--border);transition:background .3s;
+}
+.step-dot.on{background:var(--orange);}
+
+/* density counter */
+.density-counter{
+  display:flex;align-items:center;gap:6px;
+  background:#0a1628;border-radius:8px;padding:8px 12px;
+  margin-bottom:10px;
+}
+.dc-label{font-size:11px;color:var(--sub);}
+.dc-dots{display:flex;gap:4px;}
+.dc-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--border);transition:background .3s;
+}
+.dc-dot.ad{background:#ffcc80;}
+.dc-dot.over{background:var(--red);}
+.dc-val{font-size:12px;font-weight:700;margin-left:4px;}
+
+/* scatter viz */
+.scatter-list{display:flex;flex-direction:column;gap:4px;}
+.sc-row{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 8px;border-radius:6px;
+  transition:background .3s;font-size:10px;
+}
+.sc-row.block{background:#2e1a1a;border:1px solid var(--red);}
+.sc-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:3px;
+  font-size:8px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.sc-badge.ad{background:#ff9500;}
+.sc-badge.nat{background:#27ae60;}
+.sc-badge.empty{background:#2a3a5c;}
+.sc-name{flex:1;color:var(--txt);}
+.sc-note{font-size:9px;color:var(--red);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="header-title">Ad Ranking Mechanism</div>
+    <div class="header-sub">Animated Demo · animation1</div>
+  </div>
+  <div class="scene-indicator" id="sceneDots"></div>
+</div>
+
+<!-- STAGE -->
+<div class="stage" id="stage">
+
+  <!-- ══════════════════════════════
+       SCENE 0 — Title
+  ══════════════════════════════ -->
+  <div class="scene active" id="scene-0">
+    <div class="scene-header" style="margin-top:60px;">
+      <div class="scene-label">Overview</div>
+      <div class="scene-title">How Ad Ranking Works</div>
+      <div class="scene-desc">
+        A deep-dive into how the <strong style="color:var(--orange)">RankScore formula</strong>
+        and <strong style="color:var(--gold)">floating slot rules</strong>
+        shape the store list you see every day.
+      </div>
+    </div>
+    <div style="display:flex;gap:32px;margin-top:32px;flex-wrap:wrap;justify-content:center;">
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px 28px;text-align:center;min-width:200px;">
+        <div style="font-size:28px;margin-bottom:8px;">📐</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;">Ranking Formula</div>
+        <div style="font-size:11px;color:var(--sub);">K1·GMV_Score + K2·eCPM_Score</div>
+      </div>
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px 28px;text-align:center;min-width:200px;">
+        <div style="font-size:28px;margin-bottom:8px;">🧮</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;">eCPM Decomposed</div>
+        <div style="font-size:11px;color:var(--sub);">pCTR × Bid × pCVR × Fee × 1000</div>
+      </div>
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px 28px;text-align:center;min-width:200px;">
+        <div style="font-size:28px;margin-bottom:8px;">🎯</div>
+        <div style="font-size:13px;font-weight:700;color:var(--txt);margin-bottom:4px;">Floating Slot Rules</div>
+        <div style="font-size:11px;color:var(--sub);">Scatter · Density · Dedup</div>
+      </div>
+    </div>
+    <div style="margin-top:40px;font-size:12px;color:var(--sub);display:flex;align-items:center;gap:6px;">
+      <span style="color:var(--orange);">▶</span> Press Play or click Next to begin
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 1 — Ranking Formula
+  ══════════════════════════════ -->
+  <div class="scene" id="scene-1">
+    <div class="scene-header">
+      <div class="scene-label">Scene 1 of 4</div>
+      <div class="scene-title">The Ranking Formula</div>
+      <div class="scene-desc">Balancing GMV quality and ad value to reorder the store list</div>
+    </div>
+
+    <div class="two-col">
+      <!-- Phone -->
+      <div class="col-phone">
+        <div class="phone-wrap">
+          <div class="phone-shell">
+            <div class="dyn-island"></div>
+            <div class="phone-screen">
+              <div class="p-statusbar">
+                <span class="p-time">9:41</span>
+                <div class="p-icons">
+                  <svg width="12" height="9" viewBox="0 0 12 9" fill="#000">
+                    <rect x="0" y="3" width="2" height="6" rx=".5"/>
+                    <rect x="3" y="2" width="2" height="7" rx=".5"/>
+                    <rect x="6" y="1" width="2" height="8" rx=".5"/>
+                    <rect x="9" y="0" width="3" height="9" rx=".5" opacity=".3"/>
+                  </svg>
+                  <svg width="11" height="9" fill="none" viewBox="0 0 11 9">
+                    <circle cx="5.5" cy="7.5" r=".9" fill="#000"/>
+                    <path d="M3 5.5a3.5 3.5 0 015 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+                    <path d="M1 3.5a6 6 0 019 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/>
+                  </svg>
+                  <svg width="18" height="9" viewBox="0 0 18 9">
+                    <rect x=".5" y=".5" width="14" height="8" rx="2" fill="none" stroke="#000" stroke-width="1"/>
+                    <rect x="1.5" y="1.5" width="10" height="6" rx="1" fill="#000"/>
+                    <path d="M16 3v3a1.5 1.5 0 000-3z" fill="#000"/>
+                  </svg>
+                </div>
+              </div>
+              <div class="p-header">
+                <div class="p-loc">
+                  <span class="p-loc-pin">📍</span>
+                  <span class="p-loc-txt">Downtown ▾</span>
+                </div>
+                <div class="p-search">
+                  <span style="font-size:10px;opacity:.4;">🔍</span>
+                  <span>Search restaurants…</span>
+                </div>
+                <div class="p-tabs">
+                  <div class="p-tab active">🍽 All</div>
+                  <div class="p-tab">🍔 Fast Food</div>
+                  <div class="p-tab">☕ Coffee</div>
+                </div>
+              </div>
+              <div class="p-sortbar">
+                <span class="p-sort-lbl">Sort</span>
+                <div class="p-sort-chip active">⭐ Recommended</div>
+                <div class="p-sort-chip">Rating</div>
+              </div>
+              <div class="p-list" id="s1-list"></div>
+              <div class="p-bottomnav">
+                <div class="p-nav-item active"><span class="p-nav-ico">🏠</span><span class="p-nav-lbl">Home</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🔍</span><span class="p-nav-lbl">Explore</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🛒</span><span class="p-nav-lbl">Orders</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">👤</span><span class="p-nav-lbl">Profile</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="col-right">
+        <!-- Caption — starts empty; Step 1 fills it -->
+        <div class="caption-box" id="s1-caption" style="display:none;"></div>
+
+        <div class="score-panel">
+          <div class="sp-title">RankScore Formula</div>
+          <div class="formula-box">
+            <div class="formula-main">
+              RankScore = <span class="k1">K1</span><span class="op"> × </span><span class="gmv">GMV_Score</span>
+              <span class="op"> + </span>
+              <span class="k2">K2</span><span class="op"> × </span><span class="ecpm">eCPM_Score</span>
+            </div>
+          </div>
+
+          <!-- K sliders -->
+          <div class="slider-row">
+            <span class="slider-label k1">K1</span>
+            <div class="slider-track">
+              <div class="slider-fill k1" id="s1-k1-fill" style="width:100%">
+                <div class="slider-thumb"></div>
+              </div>
+            </div>
+            <span class="slider-val" id="s1-k1-val" style="color:#64b5f6;">1.0</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label k2">K2</span>
+            <div class="slider-track">
+              <div class="slider-fill k2" id="s1-k2-fill" style="width:0%">
+                <div class="slider-thumb"></div>
+              </div>
+            </div>
+            <span class="slider-val" id="s1-k2-val" style="color:#ce93d8;">0.0</span>
+          </div>
+
+          <!-- Score bars -->
+          <div class="score-bars" id="s1-bars"></div>
+        </div>
+
+        <div class="step-dots" id="s1-steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 2 — eCPM Decomposition
+  ══════════════════════════════ -->
+  <div class="scene" id="scene-2">
+    <div class="scene-header">
+      <div class="scene-label">Scene 2 of 4</div>
+      <div class="scene-title">eCPM Decomposed</div>
+      <div class="scene-desc">Each factor that builds estimated ad revenue per 1000 impressions</div>
+    </div>
+
+    <div class="two-col">
+      <div class="col-phone">
+        <div class="phone-wrap">
+          <div class="phone-shell">
+            <div class="dyn-island"></div>
+            <div class="phone-screen">
+              <div class="p-statusbar">
+                <span class="p-time">9:41</span>
+                <div class="p-icons">
+                  <svg width="12" height="9" viewBox="0 0 12 9" fill="#000"><rect x="0" y="3" width="2" height="6" rx=".5"/><rect x="3" y="2" width="2" height="7" rx=".5"/><rect x="6" y="1" width="2" height="8" rx=".5"/><rect x="9" y="0" width="3" height="9" rx=".5" opacity=".3"/></svg>
+                  <svg width="11" height="9" fill="none" viewBox="0 0 11 9"><circle cx="5.5" cy="7.5" r=".9" fill="#000"/><path d="M3 5.5a3.5 3.5 0 015 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/><path d="M1 3.5a6 6 0 019 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg width="18" height="9" viewBox="0 0 18 9"><rect x=".5" y=".5" width="14" height="8" rx="2" fill="none" stroke="#000" stroke-width="1"/><rect x="1.5" y="1.5" width="10" height="6" rx="1" fill="#000"/><path d="M16 3v3a1.5 1.5 0 000-3z" fill="#000"/></svg>
+                </div>
+              </div>
+              <div class="p-header">
+                <div class="p-loc"><span class="p-loc-pin">📍</span><span class="p-loc-txt">Downtown ▾</span></div>
+                <div class="p-search"><span style="font-size:10px;opacity:.4;">🔍</span><span>Search restaurants…</span></div>
+                <div class="p-tabs"><div class="p-tab active">🍽 All</div><div class="p-tab">🍔 Fast Food</div></div>
+              </div>
+              <div class="p-sortbar">
+                <span class="p-sort-lbl">Sort</span>
+                <div class="p-sort-chip active">⭐ Recommended</div>
+              </div>
+              <div class="p-list" id="s2-list"></div>
+              <div class="p-bottomnav">
+                <div class="p-nav-item active"><span class="p-nav-ico">🏠</span><span class="p-nav-lbl">Home</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🔍</span><span class="p-nav-lbl">Explore</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🛒</span><span class="p-nav-lbl">Orders</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">👤</span><span class="p-nav-lbl">Profile</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="caption-box" id="s2-caption">
+          <strong>eCPM</strong> (estimated Cost Per Mille) measures expected revenue per 1,000 impressions. It is the platform's core signal for ranking ad candidates.
+        </div>
+
+        <div class="score-panel">
+          <div class="sp-title">eCPM Formula Breakdown</div>
+
+          <div class="ecpm-decompose">
+            <div class="ecpm-title">Definition</div>
+            <!-- Single canonical formula -->
+            <div class="ecpm-row">
+              <span class="ecpm-tok t-pCTR" id="ec-pctr">pCTR</span>
+              <span class="ecpm-tok t-op">×</span>
+              <span class="ecpm-tok t-price" id="ec-price">Bid Price</span>
+              <span class="ecpm-tok t-op">×</span>
+              <span class="ecpm-tok t-pCVR" id="ec-pcvr">pCVR</span>
+              <span class="ecpm-tok t-op">×</span>
+              <span class="ecpm-tok t-fee" id="ec-fee">Order Fee Rate</span>
+              <span class="ecpm-tok t-op">×</span>
+              <span class="ecpm-tok t-1000" id="ec-1000">1000</span>
+            </div>
+          </div>
+
+          <div id="s2-factor-cards" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div class="step-dots" id="s2-steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 3 — Floating Slot Rules 1&2
+  ══════════════════════════════ -->
+  <div class="scene" id="scene-3">
+    <div class="scene-header">
+      <div class="scene-label">Scene 3 of 4</div>
+      <div class="scene-title">Floating Slot Rules</div>
+      <div class="scene-desc">Scatter strategy, same-brand interval &amp; density control — keeping the feed balanced</div>
+    </div>
+
+    <div class="two-col">
+      <div class="col-phone">
+        <div class="phone-wrap">
+          <div class="phone-shell">
+            <div class="dyn-island"></div>
+            <div class="phone-screen">
+              <div class="p-statusbar">
+                <span class="p-time">9:41</span>
+                <div class="p-icons">
+                  <svg width="12" height="9" viewBox="0 0 12 9" fill="#000"><rect x="0" y="3" width="2" height="6" rx=".5"/><rect x="3" y="2" width="2" height="7" rx=".5"/><rect x="6" y="1" width="2" height="8" rx=".5"/><rect x="9" y="0" width="3" height="9" rx=".5" opacity=".3"/></svg>
+                  <svg width="11" height="9" fill="none" viewBox="0 0 11 9"><circle cx="5.5" cy="7.5" r=".9" fill="#000"/><path d="M3 5.5a3.5 3.5 0 015 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/><path d="M1 3.5a6 6 0 019 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg width="18" height="9" viewBox="0 0 18 9"><rect x=".5" y=".5" width="14" height="8" rx="2" fill="none" stroke="#000" stroke-width="1"/><rect x="1.5" y="1.5" width="10" height="6" rx="1" fill="#000"/><path d="M16 3v3a1.5 1.5 0 000-3z" fill="#000"/></svg>
+                </div>
+              </div>
+              <div class="p-header">
+                <div class="p-loc"><span class="p-loc-pin">📍</span><span class="p-loc-txt">Downtown ▾</span></div>
+                <div class="p-search"><span style="font-size:10px;opacity:.4;">🔍</span><span>Search restaurants…</span></div>
+                <div class="p-tabs"><div class="p-tab active">🍽 All</div><div class="p-tab">🍔 Fast Food</div></div>
+              </div>
+              <div class="p-sortbar">
+                <span class="p-sort-lbl">Sort</span>
+                <div class="p-sort-chip active">⭐ Recommended</div>
+              </div>
+              <div class="p-list" id="s3-list"></div>
+              <div class="p-bottomnav">
+                <div class="p-nav-item active"><span class="p-nav-ico">🏠</span><span class="p-nav-lbl">Home</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🔍</span><span class="p-nav-lbl">Explore</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🛒</span><span class="p-nav-lbl">Orders</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">👤</span><span class="p-nav-lbl">Profile</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="caption-box" id="s3-caption">
+          The floating slot system ensures ads never dominate the feed — through three safeguards.
+        </div>
+
+        <div class="rules-stack">
+          <div class="rule-card" id="r1">
+            <div class="rule-header">
+              <span class="rule-num">1</span>
+              <span class="rule-name">Scatter Strategy — Consecutive Limit</span>
+            </div>
+            <div class="rule-desc">Max <strong style="color:var(--orange);">2 consecutive ad slots</strong>. A natural result must break any longer chain.</div>
+            <div class="scatter-list" id="scatter-viz" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="rule-card" id="r2">
+            <div class="rule-header">
+              <span class="rule-num">2</span>
+              <span class="rule-name">Same-Brand Interval Rule</span>
+            </div>
+            <div class="rule-desc">Two stores from the <strong style="color:var(--gold);">same brand</strong> must be separated by at least <strong style="color:var(--gold);">3 positions</strong> in the final list.</div>
+            <div class="scatter-list" id="scatter-viz-brand" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="rule-card" id="r3">
+            <div class="rule-header">
+              <span class="rule-num">3</span>
+              <span class="rule-name">Density Control</span>
+            </div>
+            <div class="rule-desc">Per page (10 stores), ad stores ≤ <strong style="color:var(--gold);">X</strong> (configurable). Currently capped at <strong style="color:var(--gold);">4</strong>.</div>
+            <div class="density-counter" id="density-counter">
+              <span class="dc-label">Ad slots used:</span>
+              <div class="dc-dots" id="dc-dots"></div>
+              <span class="dc-val" id="dc-val">0 / 4</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-dots" id="s3-steps" style="margin-top:10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SCENE 4 — De-duplication
+  ══════════════════════════════ -->
+  <div class="scene" id="scene-4">
+    <div class="scene-header">
+      <div class="scene-label">Scene 4 of 4</div>
+      <div class="scene-title">Dedup: Natural vs Ad Results</div>
+      <div class="scene-desc">"Higher rank wins" — same store can't appear twice</div>
+    </div>
+
+    <div class="two-col">
+      <div class="col-phone">
+        <div class="phone-wrap">
+          <div class="phone-shell">
+            <div class="dyn-island"></div>
+            <div class="phone-screen">
+              <div class="p-statusbar">
+                <span class="p-time">9:41</span>
+                <div class="p-icons">
+                  <svg width="12" height="9" viewBox="0 0 12 9" fill="#000"><rect x="0" y="3" width="2" height="6" rx=".5"/><rect x="3" y="2" width="2" height="7" rx=".5"/><rect x="6" y="1" width="2" height="8" rx=".5"/><rect x="9" y="0" width="3" height="9" rx=".5" opacity=".3"/></svg>
+                  <svg width="11" height="9" fill="none" viewBox="0 0 11 9"><circle cx="5.5" cy="7.5" r=".9" fill="#000"/><path d="M3 5.5a3.5 3.5 0 015 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/><path d="M1 3.5a6 6 0 019 0" stroke="#000" stroke-width="1.2" stroke-linecap="round"/></svg>
+                  <svg width="18" height="9" viewBox="0 0 18 9"><rect x=".5" y=".5" width="14" height="8" rx="2" fill="none" stroke="#000" stroke-width="1"/><rect x="1.5" y="1.5" width="10" height="6" rx="1" fill="#000"/><path d="M16 3v3a1.5 1.5 0 000-3z" fill="#000"/></svg>
+                </div>
+              </div>
+              <div class="p-header">
+                <div class="p-loc"><span class="p-loc-pin">📍</span><span class="p-loc-txt">Downtown ▾</span></div>
+                <div class="p-search"><span style="font-size:10px;opacity:.4;">🔍</span><span>Search restaurants…</span></div>
+                <div class="p-tabs"><div class="p-tab active">🍽 All</div><div class="p-tab">🍔 Fast Food</div></div>
+              </div>
+              <div class="p-sortbar">
+                <span class="p-sort-lbl">Sort</span>
+                <div class="p-sort-chip active">⭐ Recommended</div>
+              </div>
+              <div class="p-list" id="s4-list"></div>
+              <div class="p-bottomnav">
+                <div class="p-nav-item active"><span class="p-nav-ico">🏠</span><span class="p-nav-lbl">Home</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🔍</span><span class="p-nav-lbl">Explore</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">🛒</span><span class="p-nav-lbl">Orders</span></div>
+                <div class="p-nav-item"><span class="p-nav-ico">👤</span><span class="p-nav-lbl">Profile</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="caption-box" id="s4-caption">
+          When the same store appears in <strong>both natural &amp; ad</strong> results, we apply the "higher rank wins" rule.
+        </div>
+
+        <div class="score-panel">
+          <div class="sp-title">Dedup Decision Table</div>
+          <table class="dedup-table" id="dedup-table">
+            <thead>
+              <tr>
+                <th>Store</th>
+                <th>Natural Rank</th>
+                <th>Ad Rank</th>
+                <th>Final Position</th>
+                <th>Type</th>
+              </tr>
+            </thead>
+            <tbody id="dedup-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="step-dots" id="s4-steps" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- PLAYER BAR -->
+<div class="player-bar">
+  <button class="ctrl-btn nav" id="btn-prev" title="Previous Scene">◀</button>
+  <button class="ctrl-btn nav" id="btn-prev-step" title="Previous Step">◀◀</button>
+  <button class="ctrl-btn play" id="btn-play" title="Play/Pause">▶</button>
+  <button class="ctrl-btn nav" id="btn-next" title="Next Step">▶▶</button>
+  <div class="progress-track" id="progress-track">
+    <div class="progress-fill" id="progress-fill">
+      <div class="progress-thumb"></div>
+    </div>
+  </div>
+  <span class="scene-counter" id="scene-counter">Scene 1 / 5</span>
+</div>
+
+<!-- ═══════════ SCRIPT ═══════════ -->
+<script>
+/* ────────────────────────────────
+   BRAND DATA
+──────────────────────────────── */
+const BRANDS = [
+  { id:'kfc',         name:'KFC',          letter:'KFC', sub:'Kentucky',    sz:'13px', grad:['#c8101a','#8f0d13'], rating:4.3, rev:'500+', time:'18 min', dist:'0.8 km', fee:'₭10', tags:[{t:'20% off',c:'promo'},{t:'Free delivery',c:'green'}], gmvScore:82, bidPrice:2.5, pCTR:.08, pCVR:.22, feeRate:.12 },
+  { id:'lisasalad',   name:"Lisa's Salad", letter:'LS',  sub:"Lisa's",      sz:'16px', grad:['#4aaa22','#2e7010'], rating:4.6, rev:'150+', time:'15 min', dist:'0.5 km', fee:'₭12', tags:[{t:'Healthy',c:'green'},{t:'Free delivery',c:'green'}],  gmvScore:74, bidPrice:1.8, pCTR:.07, pCVR:.28, feeRate:.12 },
+  { id:'burgerking',  name:'Burger King',  letter:'BK',  sub:'Burger King', sz:'16px', grad:['#cf5502','#8a3800'], rating:4.1, rev:'300+', time:'22 min', dist:'1.4 km', fee:'₭15', tags:[{t:'Buy 1 Get 1',c:'yellow'},{t:'Free delivery',c:'green'}], gmvScore:68, bidPrice:3.2, pCTR:.10, pCVR:.18, feeRate:.12 },
+  { id:'starbucks',   name:'Starbucks',    letter:'SB',  sub:'Starbucks',   sz:'16px', grad:['#00704a','#004e33'], rating:4.5, rev:'1k+',  time:'20 min', dist:'0.6 km', fee:'₭16', tags:[{t:'15% off ₭60',c:'promo'},{t:'Free delivery',c:'green'}], gmvScore:90, bidPrice:1.2, pCTR:.06, pCVR:.20, feeRate:.12 },
+  { id:'philipsteak', name:'Philip Steak', letter:'PS',  sub:'Philip',      sz:'16px', grad:['#7a2000','#4e1400'], rating:4.7, rev:'200+', time:'28 min', dist:'2.1 km', fee:'₭20', tags:[{t:"Chef's Special",c:'yellow'},{t:'30% off steaks',c:'promo'}], gmvScore:61, bidPrice:4.1, pCTR:.12, pCVR:.15, feeRate:.12 },
+];
+
+/* ────────────────────────────────
+   HELPERS
+──────────────────────────────── */
+// FIX #7: ×1000 is canonical; all eCPM values are in "per 1000 impressions" unit
+function calcEcpm(b){ return b.pCTR * b.bidPrice * b.pCVR * b.feeRate * 1000; }
+function calcRank(k1,k2,b){ return k1*(b.gmvScore/100) + k2*(calcEcpm(b)/10); }
+
+function buildPhoneCard(b, rank, isAd){
+  const div = document.createElement('div');
+  div.className = 'p-card' + (isAd ? ' ad-slot' : '');
+  div.dataset.id = b.id;
+  const rankCls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+  div.innerHTML = `
+    <div class="p-logo" style="background:linear-gradient(150deg,${b.grad[0]},${b.grad[1]})">
+      <span class="p-logo-letter" style="font-size:${b.sz}">${b.letter}</span>
+      <span class="p-logo-sub">${b.sub}</span>
+      <div class="p-ad-badge ${isAd?'on':''}">Ad</div>
+    </div>
+    <div class="p-info">
+      <div class="p-name">${b.name}</div>
+      <div class="p-rating"><span>⭐</span><span class="rv">${b.rating}</span><span class="rc">(${b.rev})</span></div>
+      <div class="p-delivery">
+        <span>🛵</span><span class="p-free">Free</span>
+        <span style="text-decoration:line-through;color:#ccc;font-size:7px;">${b.fee}</span>
+        <span>· ${b.time} · ${b.dist}</span>
+      </div>
+      <div class="p-tags">
+        ${b.tags.map(t=>`<span class="p-tag ${t.c}">${t.t}</span>`).join('')}
+      </div>
+    </div>
+    <div class="p-rank ${rankCls}">#${rank}</div>
+  `;
+  return div;
+}
+
+function renderPhoneList(containerId, brandOrder, adIds=[]){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  brandOrder.forEach((b,i)=>{
+    el.appendChild(buildPhoneCard(b, i+1, adIds.includes(b.id)));
+  });
+}
+
+/* ────────────────────────────────
+   SCENE MANAGEMENT
+──────────────────────────────── */
+const TOTAL_SCENES = 5; // 0..4
+let currentScene = 0;
+let isPlaying = false;
+let playTimer = null;
+let stepIndex = 0;
+
+const scenes = [];
+for(let i=0;i<TOTAL_SCENES;i++) scenes.push(document.getElementById('scene-'+i));
+
+// Build dots
+const dotsWrap = document.getElementById('sceneDots');
+for(let i=0;i<TOTAL_SCENES;i++){
+  const d = document.createElement('div');
+  d.className='scene-dot'+(i===0?' active':'');
+  d.addEventListener('click',()=>jumpScene(i));
+  dotsWrap.appendChild(d);
+}
+
+function updateDots(){
+  const dots = dotsWrap.querySelectorAll('.scene-dot');
+  dots.forEach((d,i)=>{
+    d.classList.remove('active','done');
+    if(i===currentScene) d.classList.add('active');
+    else if(i<currentScene) d.classList.add('done');
+  });
+  document.getElementById('scene-counter').textContent=`Scene ${currentScene+1} / ${TOTAL_SCENES}`;
+  const pct = (currentScene/(TOTAL_SCENES-1))*100;
+  document.getElementById('progress-fill').style.width = pct+'%';
+}
+
+function showScene(n){
+  scenes.forEach((s,i)=>{
+    s.classList.remove('active');
+  });
+  scenes[n].classList.add('active');
+  currentScene = n;
+  stepIndex = 0;
+  updateDots();
+  initScene(n);
+}
+
+function jumpScene(n){
+  clearPlayTimer();
+  showScene(n);
+}
+
+function nextScene(){
+  if(currentScene < TOTAL_SCENES-1) showScene(currentScene+1);
+  else{ isPlaying=false; updatePlayBtn(); }
+}
+
+function prevScene(){
+  if(currentScene>0) showScene(currentScene-1);
+}
+
+function clearPlayTimer(){ if(playTimer){ clearTimeout(playTimer); playTimer=null; } }
+
+function updatePlayBtn(){
+  document.getElementById('btn-play').textContent = isPlaying?'⏸':'▶';
+}
+
+document.getElementById('btn-play').addEventListener('click',()=>{
+  isPlaying=!isPlaying;
+  updatePlayBtn();
+  if(isPlaying) scheduleNext();
+  else clearPlayTimer();
+});
+document.getElementById('btn-next').addEventListener('click',()=>{
+  clearPlayTimer();
+  isPlaying=false;updatePlayBtn();
+  nextStep();
+});
+document.getElementById('btn-prev-step').addEventListener('click',()=>{
+  clearPlayTimer();
+  isPlaying=false;updatePlayBtn();
+  prevStep();
+});
+document.getElementById('btn-prev').addEventListener('click',()=>{
+  clearPlayTimer();
+  isPlaying=false;updatePlayBtn();
+  prevScene();
+});
+
+function scheduleNext(){
+  clearPlayTimer();
+  playTimer = setTimeout(()=>{
+    if(!isPlaying) return;
+    nextStep();
+    if(isPlaying) scheduleNext();
+  }, 2800);
+}
+
+function nextStep(){
+  const handlers = sceneStepHandlers[currentScene];
+  if(handlers && stepIndex < handlers.length){
+    handlers[stepIndex]();
+    stepIndex++;
+    updateStepDots(currentScene, handlers.length);
+  } else {
+    nextScene();
+  }
+}
+
+function prevStep(){
+  const handlers = sceneStepHandlers[currentScene];
+  if(!handlers) return;
+  if(stepIndex > 1){
+    // go back one: re-run from initScene up to stepIndex-2
+    const targetStep = stepIndex - 2;
+    stepIndex = 0;
+    initScene(currentScene);
+    for(let i=0;i<=targetStep;i++){
+      handlers[i]();
+      stepIndex++;
+    }
+    updateStepDots(currentScene, handlers.length);
+  } else if(stepIndex === 1){
+    // back to init state (step 0, no caption shown)
+    stepIndex = 0;
+    initScene(currentScene);
+    updateStepDots(currentScene, handlers.length);
+  } else {
+    // already at init, go to previous scene
+    prevScene();
+  }
+}
+
+function updateStepDots(sceneId, total){
+  const id = `s${sceneId}-steps`;
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.innerHTML = '';
+  for(let i=0;i<total;i++){
+    const d = document.createElement('div');
+    d.className='step-dot'+(i<stepIndex?' on':'');
+    el.appendChild(d);
+  }
+}
+
+/* ────────────────────────────────
+   SCENE STEP HANDLERS
+──────────────────────────────── */
+const sceneStepHandlers = {};
+
+/* ── Scene 0: Title (no steps, auto-advance) ── */
+sceneStepHandlers[0] = [];
+
+/* ── Scene 1: Ranking Formula ── */
+// FIX #8: initScene sets the initial state silently (no caption); Step 1 is the first narrated step
+sceneStepHandlers[1] = [
+  // Step 1: natural order (K1=1, K2=0) — first narrated step, show caption
+  ()=>{
+    const captionEl = document.getElementById('s1-caption');
+    captionEl.style.display = '';
+    animateSliders(1,'s1-k1-fill','s1-k1-val',1.0,'#64b5f6');
+    animateSliders(1,'s1-k2-fill','s1-k2-val',0.0,'#ce93d8');
+    const naturalOrder = [...BRANDS].sort((a,b)=>b.gmvScore-a.gmvScore);
+    renderPhoneList('s1-list', naturalOrder, []);
+    renderScoreBars('s1-bars', naturalOrder, 1.0, 0.0);
+    setCaption('s1-caption','<strong>Natural Ranking (K1=1.0, K2=0):</strong> Stores sorted purely by GMV score. Starbucks leads with score 90. No ad weight applied yet — floating slots are not yet inserted.');
+  },
+  // Step 2: introduce ad weight (K1=0.2, K2=0.8) — floating slots dynamically placed at top-2 ad positions
+  ()=>{
+    animateSliders(1,'s1-k1-fill','s1-k1-val',0.2,'#64b5f6');
+    animateSliders(1,'s1-k2-fill','s1-k2-val',0.8,'#ce93d8');
+    const adOrder = [...BRANDS].sort((a,b)=>calcRank(.2,.8,b)-calcRank(.2,.8,a));
+    // Floating slot positions are determined dynamically by the top-ranked ad candidates (#1 and #3 in this result)
+    renderPhoneList('s1-list', adOrder, [adOrder[0].id, adOrder[2].id]);
+    renderScoreBars('s1-bars', adOrder, 0.2, 0.8);
+    setCaption('s1-caption','<strong>Ad Ranking (K1=0.2, K2=0.8):</strong> eCPM weight dominates — Philip Steak & Burger King climb up due to higher bids. 🟠 Floating ad slots land at the top-ranked ad positions in the merged list.');
+  },
+  // Step 3: balanced (K1=0.5, K2=0.5)
+  ()=>{
+    animateSliders(1,'s1-k1-fill','s1-k1-val',0.5,'#64b5f6');
+    animateSliders(1,'s1-k2-fill','s1-k2-val',0.5,'#ce93d8');
+    const balanced = [...BRANDS].sort((a,b)=>calcRank(.5,.5,b)-calcRank(.5,.5,a));
+    renderPhoneList('s1-list', balanced, [balanced[0].id, balanced[2].id]);
+    renderScoreBars('s1-bars', balanced, 0.5, 0.5);
+    setCaption('s1-caption','<strong>Balanced (K1=K2=0.5):</strong> A middle ground — GMV and ad value weighted equally. Notice how rankings shift as both dimensions are respected.');
+  },
+];
+
+/* ── Scene 2: eCPM Decompose ── */
+// FIX #2 & #3: Removed "GMV × fee" alias row; single canonical formula pCTR × Bid × pCVR × Fee × 1000
+sceneStepHandlers[2] = [
+  // Step 1: highlight pCTR
+  ()=>{
+    ['ec-pctr','ec-price','ec-pcvr','ec-fee','ec-1000'].forEach(id=>document.getElementById(id)?.classList.add('dim'));
+    document.getElementById('ec-pctr')?.classList.remove('dim');
+    renderFactorCards('s2-factor-cards','pctr');
+    setCaption('s2-caption','<strong>pCTR</strong> — Predicted Click-Through Rate. How likely is a user to click on this store\'s ad when shown? Philip Steak leads at 12%. A higher pCTR multiplies the eCPM directly.');
+    const ecpmOrder = [...BRANDS].sort((a,b)=>b.pCTR-a.pCTR);
+    renderPhoneList('s2-list', ecpmOrder, [ecpmOrder[0].id]);
+  },
+  // Step 2: highlight Bid Price
+  ()=>{
+    ['ec-pctr','ec-price','ec-pcvr','ec-fee','ec-1000'].forEach(id=>document.getElementById(id)?.classList.add('dim'));
+    document.getElementById('ec-price')?.classList.remove('dim');
+    renderFactorCards('s2-factor-cards','price');
+    setCaption('s2-caption','<strong>Bid Price</strong> — The amount the merchant is willing to pay per click (CPC bid). Philip Steak bids ₭4.1 — the highest. Higher bid directly lifts eCPM, all else equal.');
+    const priceOrder = [...BRANDS].sort((a,b)=>b.bidPrice-a.bidPrice);
+    renderPhoneList('s2-list', priceOrder, [priceOrder[0].id]);
+  },
+  // Step 3: highlight pCVR
+  ()=>{
+    ['ec-pctr','ec-price','ec-pcvr','ec-fee','ec-1000'].forEach(id=>document.getElementById(id)?.classList.add('dim'));
+    document.getElementById('ec-pcvr')?.classList.remove('dim');
+    renderFactorCards('s2-factor-cards','pcvr');
+    setCaption('s2-caption','<strong>pCVR</strong> — Predicted Conversion Rate (click → order). Lisa\'s Salad converts 28% of clicks into orders. A strong pCVR rewards stores that turn ad traffic into real revenue.');
+    const pcvrOrder = [...BRANDS].sort((a,b)=>b.pCVR-a.pCVR);
+    renderPhoneList('s2-list', pcvrOrder, [pcvrOrder[0].id]);
+  },
+  // Step 4: full eCPM with ×1000 unit highlighted
+  ()=>{
+    ['ec-pctr','ec-price','ec-pcvr','ec-fee','ec-1000'].forEach(id=>document.getElementById(id)?.classList.remove('dim'));
+    renderFactorCards('s2-factor-cards','all');
+    setCaption('s2-caption','<strong>Full eCPM (×1000):</strong> pCTR × Bid × pCVR × Fee Rate × 1000. Unit: estimated revenue per 1,000 ad impressions. Philip Steak wins despite a weaker GMV base — high bid (₭4.1) × high pCTR (12%) drives the highest eCPM.');
+    const ecpmOrder = [...BRANDS].sort((a,b)=>calcEcpm(b)-calcEcpm(a));
+    renderPhoneList('s2-list', ecpmOrder, [ecpmOrder[0].id]);
+  },
+];
+
+/* ── Scene 3: Scatter + Same-Brand Interval + Density ── */
+// FIX #5: Added same-brand interval rule (Rule 2) as a separate step
+sceneStepHandlers[3] = [
+  // Step 1: show 2 consecutive ads (valid — consecutive rule)
+  ()=>{
+    highlightRule('r1','highlight');highlightRule('r2','none');highlightRule('r3','none');
+    const list = [{b:BRANDS[0],ad:true},{b:BRANDS[1],ad:true},{b:BRANDS[3],ad:false},{b:BRANDS[2],ad:false},{b:BRANDS[4],ad:false}];
+    renderPhoneList('s3-list', list.map(x=>x.b), list.filter(x=>x.ad).map(x=>x.b.id));
+    renderScatterViz('scatter-viz',[
+      {pos:1,name:'KFC',ad:true,note:''},
+      {pos:2,name:"Lisa's Salad",ad:true,note:''},
+      {pos:3,name:'Starbucks',ad:false,note:''},
+    ]);
+    renderScatterViz('scatter-viz-brand',[]);
+    updateDensity(2,4);
+    setCaption('s3-caption','<strong>Rule 1 ✅ Valid:</strong> 2 consecutive ad stores (KFC + Lisa\'s Salad at #1 & #2) — within the max-2-consecutive limit. The chain is allowed.');
+  },
+  // Step 2: 3 consecutive = violation (consecutive rule violated)
+  ()=>{
+    highlightRule('r1','violated');highlightRule('r2','none');highlightRule('r3','none');
+    const list = [{b:BRANDS[0],ad:true},{b:BRANDS[1],ad:true},{b:BRANDS[2],ad:true},{b:BRANDS[3],ad:false},{b:BRANDS[4],ad:false}];
+    renderPhoneList('s3-list', list.map(x=>x.b), list.filter(x=>x.ad).map(x=>x.b.id));
+    renderScatterViz('scatter-viz',[
+      {pos:1,name:'KFC',ad:true,note:''},
+      {pos:2,name:"Lisa's Salad",ad:true,note:''},
+      {pos:3,name:'Burger King',ad:true,note:'❌ 3rd consecutive — BLOCKED'},
+    ]);
+    renderScatterViz('scatter-viz-brand',[]);
+    updateDensity(3,4);
+    setCaption('s3-caption','<strong>Rule 1 ❌ Violation:</strong> 3 consecutive ad slots! Burger King at #3 is demoted — replaced by a natural result to break the chain. The consecutive window resets.');
+  },
+  // Step 3: same-brand interval violation (NEW — FIX #5)
+  ()=>{
+    highlightRule('r1','none');highlightRule('r2','violated');highlightRule('r3','none');
+    // KFC Store A at #1, KFC Store B at #3 — gap is only 1 position (< 3 required)
+    const kfcA = {...BRANDS[0], name:'KFC (Midtown)', letter:'KFC'};
+    const kfcB = {...BRANDS[0], id:'kfc2', name:'KFC (Downtown)', letter:'KFC'};
+    const list = [
+      {b:kfcA, ad:true},
+      {b:BRANDS[3], ad:false},
+      {b:kfcB, ad:true},
+      {b:BRANDS[1], ad:false},
+      {b:BRANDS[4], ad:false},
+    ];
+    renderPhoneList('s3-list', list.map(x=>x.b), list.filter(x=>x.ad).map(x=>x.b.id));
+    renderScatterViz('scatter-viz',[]);
+    renderScatterViz('scatter-viz-brand',[
+      {pos:1,name:'KFC (Midtown)',ad:true,note:'brand: KFC'},
+      {pos:2,name:'Starbucks',ad:false,note:''},
+      {pos:3,name:'KFC (Downtown)',ad:true,note:'❌ Gap = 1 position — needs ≥3'},
+    ]);
+    updateDensity(2,4);
+    setCaption('s3-caption','<strong>Rule 2 ❌ Interval violation:</strong> Two KFC stores are only 1 position apart (#1 and #3). The same-brand minimum interval is 3 — KFC Downtown is suppressed and replaced by the next natural result.');
+  },
+  // Step 4: density cap hit
+  ()=>{
+    highlightRule('r1','none');highlightRule('r2','none');highlightRule('r3','violated');
+    const list = [{b:BRANDS[0],ad:true},{b:BRANDS[3],ad:false},{b:BRANDS[2],ad:true},{b:BRANDS[1],ad:true},{b:BRANDS[4],ad:true}];
+    renderPhoneList('s3-list', list.map(x=>x.b), list.filter(x=>x.ad).map(x=>x.b.id));
+    renderScatterViz('scatter-viz',[]);
+    renderScatterViz('scatter-viz-brand',[
+      {pos:1,name:'KFC',ad:true,note:''},
+      {pos:2,name:'Starbucks',ad:false,note:''},
+      {pos:3,name:'Burger King',ad:true,note:''},
+      {pos:4,name:"Lisa's Salad",ad:true,note:''},
+      {pos:5,name:'Philip Steak',ad:true,note:'⚠ Density cap reached'},
+    ]);
+    updateDensity(4,4);
+    setCaption('s3-caption','<strong>Rule 3 ⚠ Density cap hit:</strong> 4/4 ad slots in this page are filled. Any additional ad candidate is suppressed and treated as a natural result — cap protects user experience.');
+  },
+];
+
+/* ── Scene 4: Dedup ──
+   Data design (self-consistent, no duplicate final positions):
+   Natural ranking:  Starbucks#1  KFC#2  Lisa#3  Philip#4  BK#5
+   Ad ranking:       Philip#1     BK#2   KFC#3   Lisa#4    SB#5
+
+   Case A: KFC  — nat #2, ad #3  → natural wins (#2). type: natural
+   Case B: BK   — nat #5, ad #2  → ad wins (#2). type: ad
+   (KFC and BK end up at different positions — no collision)
+
+   Final merge (pick best per store, then fill gaps with remaining naturals):
+     #1 Starbucks  nat #1, no ad bid         → natural
+     #2 BK         nat #5, ad #2             → ad (ad wins)
+     #3 KFC        nat #2, ad #3             → natural (natural wins)
+     #4 Lisa       nat #3, ad #4             → natural
+     #5 Philip     nat #4, ad #1 (but already accounted) → natural
+──────────────────────────────── */
+sceneStepHandlers[4] = [
+  // Step 1: Case A — natural wins (KFC)
+  ()=>{
+    // Phone: natural order  Starbucks(#1) KFC(#2) Lisa(#3) Philip(#4) BK(#5)
+    const order = [BRANDS[3],BRANDS[0],BRANDS[1],BRANDS[4],BRANDS[2]];
+    renderPhoneList('s4-list', order, []);
+    renderDedupTable([
+      {store:'Starbucks',nat:1,ad:'-',final:1,type:'natural',active:false},
+      {store:'KFC',nat:2,ad:3,final:2,type:'natural',active:true},
+    ]);
+    setCaption('s4-caption','<strong>Case A — Natural wins:</strong> KFC is #2 naturally, but only #3 in ad ranking. Natural position is better → shown as a natural result at <strong>#2</strong>. The ad slot is freed for another candidate.');
+  },
+  // Step 2: Case B — ad wins (BK)
+  ()=>{
+    // Phone: BK promoted to #2 by ad rank
+    const order = [BRANDS[3],BRANDS[2],BRANDS[0],BRANDS[1],BRANDS[4]];
+    renderPhoneList('s4-list', order, [BRANDS[2].id]);
+    renderDedupTable([
+      {store:'Starbucks',nat:1,ad:'-',final:1,type:'natural',active:false},
+      {store:'KFC',nat:2,ad:3,final:2,type:'natural',active:false},
+      {store:'Burger King',nat:5,ad:2,final:2,type:'ad',active:true},
+    ]);
+    setCaption('s4-caption','<strong>Case B — Ad wins:</strong> Burger King is #5 naturally but <strong>#2</strong> in ad ranking. Ad position is better → shown as an <strong>ad result at #2</strong>, bumping KFC to #3. This impression is billed as an ad click. 🟠');
+  },
+  // Step 3: full merged result (all 5 stores, unique final positions #1–#5)
+  ()=>{
+    // Final order: Starbucks#1  BK#2(ad)  KFC#3  Lisa#4  Philip#5
+    const mergedOrder = [BRANDS[3],BRANDS[2],BRANDS[0],BRANDS[1],BRANDS[4]];
+    renderPhoneList('s4-list', mergedOrder, [BRANDS[2].id]);
+    renderDedupTable([
+      {store:'Starbucks',  nat:1, ad:'-', final:1, type:'natural', active:false},
+      {store:'Burger King',nat:5, ad:2,   final:2, type:'ad',      active:true},
+      {store:'KFC',        nat:2, ad:3,   final:3, type:'natural', active:false},
+      {store:"Lisa's Salad",nat:3,ad:4,  final:4, type:'natural', active:false},
+      {store:'Philip Steak',nat:4,ad:1,  final:5, type:'natural', active:false},
+    ]);
+    setCaption('s4-caption','<strong>Final merged feed:</strong> Each store appears exactly once at a unique position (#1–#5). BK wins ad slot #2; KFC falls to #3 naturally. Philip had the top ad rank but its natural slot (#4) is preserved — no duplicate positions.');
+  },
+];
+
+/* ────────────────────────────────
+   RENDER HELPERS
+──────────────────────────────── */
+function setCaption(id, html){
+  const el = document.getElementById(id);
+  if(el){ el.innerHTML=html; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+}
+
+function animateSliders(sceneId, fillId, valId, val, color){
+  const fill = document.getElementById(fillId);
+  const valEl = document.getElementById(valId);
+  if(fill) fill.style.width = (val*100)+'%';
+  if(valEl){ valEl.textContent = val.toFixed(1); valEl.style.color=color; }
+}
+
+function renderScoreBars(containerId, orderedBrands, k1, k2){
+  const el = document.getElementById(containerId);
+  el.innerHTML='';
+  const maxScore = Math.max(...orderedBrands.map(b=>calcRank(k1,k2,b)));
+  orderedBrands.forEach((b,i)=>{
+    const score = calcRank(k1,k2,b);
+    const pct = (score/maxScore)*100;
+    const colors = ['#ff6b35','#f5a623','#64b5f6','#a5d6a7','#ce93d8'];
+    const row = document.createElement('div');
+    row.className='score-bar-row';
+    row.innerHTML=`
+      <span class="sb-name" style="color:${colors[i]}">#${i+1} ${b.name}</span>
+      <div class="sb-track">
+        <div class="sb-fill" style="width:${pct}%;background:${colors[i]}">
+          ${score.toFixed(2)}
+        </div>
+      </div>
+      <span class="sb-score" style="color:${colors[i]}">${score.toFixed(2)}</span>
+    `;
+    el.appendChild(row);
+  });
+}
+
+// FIX #2 & #3: Factor cards only show the 4 canonical eCPM components (no GMV alias)
+function renderFactorCards(containerId, highlight){
+  const el = document.getElementById(containerId);
+  el.innerHTML='';
+  const factors = [
+    {id:'pctr',  label:'pCTR',      desc:'Predicted click-through rate',   vals: BRANDS.map(b=>`${(b.pCTR*100).toFixed(0)}%`),    color:'#64b5f6'},
+    {id:'price', label:'Bid Price', desc:'Merchant CPC bid per click',      vals: BRANDS.map(b=>`₭${b.bidPrice}`),                 color:'#ce93d8'},
+    {id:'pcvr',  label:'pCVR',      desc:'Predicted conversion rate',       vals: BRANDS.map(b=>`${(b.pCVR*100).toFixed(0)}%`),    color:'#a5d6a7'},
+    {id:'all',   label:'eCPM',      desc:'Est. revenue per 1,000 impr.',    vals: BRANDS.map(b=>calcEcpm(b).toFixed(3)),            color:'#ffcc80'},
+  ];
+  // For single-highlight steps, show only that factor; for 'all', show all four
+  const show = highlight==='all' ? factors : factors.filter(f=>f.id===highlight);
+  show.forEach(f=>{
+    const div=document.createElement('div');
+    div.style.cssText='background:#0a1628;border-radius:8px;padding:10px;border:1px solid #1a2a3c;';
+    div.innerHTML=`
+      <div style="font-size:11px;font-weight:700;color:${f.color};margin-bottom:6px;">${f.label} — ${f.desc}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${BRANDS.map((b,i)=>`<span style="background:#1a2a3c;border-radius:5px;padding:2px 7px;font-size:9.5px;color:${f.color};font-weight:700;">${b.name.split(' ')[0]}: ${f.vals[i]}</span>`).join('')}
+      </div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function highlightRule(id, mode){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('highlight','violated');
+  if(mode==='highlight') el.classList.add('highlight');
+  if(mode==='violated') el.classList.add('violated');
+}
+
+// FIX #5: renderScatterViz now accepts a target element id so it can populate both scatter-viz and scatter-viz-brand
+function renderScatterViz(targetId, rows){
+  const el=document.getElementById(targetId);
+  if(!el) return;
+  el.innerHTML='';
+  rows.forEach(r=>{
+    const div=document.createElement('div');
+    div.className='sc-row'+(r.note&&r.note.startsWith('❌')?' block':'');
+    div.innerHTML=`
+      <span class="sc-badge ${r.ad?'ad':'nat'}">${r.ad?'Ad':'#'+r.pos}</span>
+      <span class="sc-name">#${r.pos} ${r.name}</span>
+      ${r.note?`<span class="sc-note">${r.note}</span>`:''}
+    `;
+    el.appendChild(div);
+  });
+}
+
+function updateDensity(used, cap){
+  const dots=document.getElementById('dc-dots');
+  const val=document.getElementById('dc-val');
+  if(!dots||!val) return;
+  dots.innerHTML='';
+  for(let i=0;i<cap;i++){
+    const d=document.createElement('div');
+    d.className='dc-dot'+(i<used?(used>=cap?' over':' ad'):'');
+    dots.appendChild(d);
+  }
+  val.textContent=`${used} / ${cap}`;
+  val.style.color = used>=cap ? 'var(--red)' : used>0 ? '#ffcc80' : 'var(--sub)';
+}
+
+function renderDedupTable(rows){
+  const tbody=document.getElementById('dedup-tbody');
+  if(!tbody) return;
+  tbody.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.className=r.active?(r.type==='ad'?'ad-row':'active-row'):'';
+    tr.innerHTML=`
+      <td style="font-weight:700;">${r.store}</td>
+      <td><span class="badge natural">#${r.nat}</span></td>
+      <td>${r.ad==='-'?'<span style="color:var(--sub);">—</span>':`<span class="badge ad">#${r.ad}</span>`}</td>
+      <td><span class="badge result" style="font-weight:800;">#${r.final}</span></td>
+      <td><span class="badge ${r.type==='ad'?'ad-result':'natural'}">${r.type}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ────────────────────────────────
+   INIT SCENES
+   FIX #8: initScene renders the initial phone list silently,
+   without triggering the caption. The caption appears only
+   when Step 1 is explicitly triggered.
+──────────────────────────────── */
+function initScene(n){
+  if(n===0) return;
+  if(n===1){
+    // Show natural order silently — no caption until Step 1 fires
+    const natural=[...BRANDS].sort((a,b)=>b.gmvScore-a.gmvScore);
+    renderPhoneList('s1-list',natural,[]);
+    renderScoreBars('s1-bars',natural,1.0,0.0);
+    // Reset sliders to K1=1, K2=0 (natural state)
+    animateSliders(1,'s1-k1-fill','s1-k1-val',1.0,'#64b5f6');
+    animateSliders(1,'s1-k2-fill','s1-k2-val',0.0,'#ce93d8');
+    // Hide caption until Step 1
+    const captionEl = document.getElementById('s1-caption');
+    if(captionEl){ captionEl.style.display='none'; captionEl.innerHTML=''; }
+    updateStepDots(1, sceneStepHandlers[1].length);
+  }
+  if(n===2){
+    // Show eCPM-sorted list as teaser; all tokens undimmed; factor cards empty
+    const ecpmOrder=[...BRANDS].sort((a,b)=>calcEcpm(b)-calcEcpm(a));
+    renderPhoneList('s2-list',ecpmOrder,[ecpmOrder[0].id]);
+    document.getElementById('s2-factor-cards').innerHTML='';
+    ['ec-pctr','ec-price','ec-pcvr','ec-fee','ec-1000'].forEach(id=>document.getElementById(id)?.classList.remove('dim'));
+    updateStepDots(2, sceneStepHandlers[2].length);
+  }
+  if(n===3){
+    const list=[BRANDS[0],BRANDS[1],BRANDS[3],BRANDS[2],BRANDS[4]];
+    renderPhoneList('s3-list',list,[]);
+    renderScatterViz('scatter-viz',[]);
+    renderScatterViz('scatter-viz-brand',[]);
+    updateDensity(0,4);
+    highlightRule('r1','none');highlightRule('r2','none');highlightRule('r3','none');
+    updateStepDots(3, sceneStepHandlers[3].length);
+  }
+  if(n===4){
+    const order=[BRANDS[3],BRANDS[0],BRANDS[1],BRANDS[2],BRANDS[4]];
+    renderPhoneList('s4-list',order,[]);
+    document.getElementById('dedup-tbody').innerHTML='';
+    updateStepDots(4, sceneStepHandlers[4].length);
+  }
+}
+
+/* ────────────────────────────────
+   PROGRESS BAR CLICK
+──────────────────────────────── */
+document.getElementById('progress-track').addEventListener('click',(e)=>{
+  const track = e.currentTarget;
+  const pct = e.offsetX / track.offsetWidth;
+  const targetScene = Math.round(pct*(TOTAL_SCENES-1));
+  clearPlayTimer(); isPlaying=false; updatePlayBtn();
+  jumpScene(targetScene);
+});
+
+/* ────────────────────────────────
+   BOOT
+──────────────────────────────── */
+showScene(0);
+</script>
+</body>
+</html>
